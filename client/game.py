@@ -11,18 +11,20 @@ import pygame as pg
 
 from core import config as C
 from core.scene import SceneState
+from core.world import World
 from client.audio import load_sounds
 from client.audio_manager import AudioManager
 from client.controls import InputMapper
 from client.renderer import Renderer
-from core.world import World
 
 
 class Game:
     """Orchestrates input -> update -> draw."""
 
     def __init__(self) -> None:
-        pg.mixer.pre_init(C.AUDIO_FREQUENCY, C.AUDIO_SIZE, C.AUDIO_CHANNELS, C.AUDIO_BUFFER)
+        pg.mixer.pre_init(
+            C.AUDIO_FREQUENCY, C.AUDIO_SIZE, C.AUDIO_CHANNELS, C.AUDIO_BUFFER
+        )
         pg.init()
         pg.mixer.init()
 

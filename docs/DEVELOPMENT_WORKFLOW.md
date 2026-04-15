@@ -25,6 +25,7 @@ Guide Asteroids development through short, safe, and testable PRs, ensuring tech
 - `chore/<short-description>` -- maintenance, docs, refactoring
 
 Examples:
+
 - `feat/multiplayer-lobby`
 - `fix/hyperspace-spawn-inside-asteroid`
 - `chore/extract-collision-manager`
@@ -32,6 +33,7 @@ Examples:
 ### 3.2 Commits
 
 Message format:
+
 - `feat: objective description`
 - `fix: specific fix`
 - `chore: structural change`
@@ -62,6 +64,7 @@ python main.py
 ```
 
 Test manually:
+
 - Gameplay works (move, shoot, collisions)
 - Menu and game over work
 - Sounds play correctly
@@ -84,6 +87,7 @@ Format: `feat: objective description` / `fix: fix description` / `chore: change 
 ### 5.2 Description
 
 Every PR must include:
+
 - **Objective**: problem the PR solves
 - **What was implemented**: objective list of changes
 - **Technical decisions**: justifications when relevant
@@ -92,17 +96,20 @@ Every PR must include:
 ## 6. Review Checklist
 
 ### Architecture
+
 - [ ] `core/` does not import `client/`
 - [ ] No circular imports
 - [ ] Constants in `core/config.py`
 
 ### Quality
+
 - [ ] Typed code (type hints)
 - [ ] No magic numbers outside `config.py`
 - [ ] Cohesive and readable functions
 - [ ] No overengineering
 
 ### Functionality
+
 - [ ] Game runs without errors (`python main.py`)
 - [ ] Gameplay functional (move, shoot, collisions)
 - [ ] No visible regressions

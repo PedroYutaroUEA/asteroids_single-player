@@ -7,6 +7,7 @@ Project: `asteroids_single-player`
 This document describes the current architecture of the project.
 
 Scope:
+
 - Python code in `core/`, `client/`, and `main.py`
 - Documentation in `docs/`
 - Assets in `assets/`
@@ -36,6 +37,7 @@ asteroids_single-player/
 ```
 
 Audio files in `assets/sounds/`:
+
 - `asteroid_explosion.wav`
 - `player_shoot.wav`
 - `ship_explosion.wav`
@@ -51,6 +53,7 @@ Audio files in `assets/sounds/`:
 Entry point.
 
 Current responsibilities:
+
 - Imports `Game` from `client.game`
 - Runs `Game().run()`
 
@@ -59,6 +62,7 @@ Current responsibilities:
 Orchestrates the game loop, scenes, and pygame integration.
 
 Current responsibilities:
+
 - Pygame and mixer initialization
 - Window, clock, and font creation
 - Scene control (`menu`, `play`, `game_over`)
@@ -74,6 +78,7 @@ Current responsibilities:
 Client-side rendering.
 
 Current responsibilities:
+
 - Screen clearing
 - Scene drawing (`menu`, `game_over`)
 - World drawing from sprites exposed by `World`
@@ -84,6 +89,7 @@ Current responsibilities:
 Local input mapping to player commands.
 
 Current responsibilities:
+
 - `InputMapper` class
 - Captures `KEYDOWN` events for `shoot` and `hyperspace`
 - Reads continuous keys for rotation and thrust
@@ -94,6 +100,7 @@ Current responsibilities:
 Sound effect loading.
 
 Current responsibilities:
+
 - `SoundPack` with `pygame.mixer.Sound` references
 - `load_sounds(base_path)` to load sounds from `core.config`
 
@@ -102,6 +109,7 @@ Current responsibilities:
 Core game rules (`World`).
 
 Current responsibilities:
+
 - Game state: ships, bullets, asteroids, UFOs, score, lives, wave
 - Player, asteroid, and UFO spawning
 - Command application by `player_id`
@@ -115,6 +123,7 @@ Current responsibilities:
 Game entities based on `pygame.sprite.Sprite`.
 
 Current responsibilities:
+
 - Classes: `Ship`, `Asteroid`, `Bullet`, `UFO`
 - Physics and local update for each entity
 - Firing rules for `Ship` and `UFO`
@@ -125,6 +134,7 @@ Current responsibilities:
 Player intent contract.
 
 Current responsibilities:
+
 - Immutable `dataclass` `PlayerCommand`
 - Flags: `rotate_left`, `rotate_right`, `thrust`, `shoot`, `hyperspace`
 
@@ -133,6 +143,7 @@ Current responsibilities:
 Math utilities.
 
 Current responsibilities:
+
 - `Vec` alias (`pygame.math.Vector2`)
 - Vector and geometry helpers (`wrap_pos`, `angle_to_vec`, etc.)
 
@@ -141,6 +152,7 @@ Current responsibilities:
 Central game configuration.
 
 Current responsibilities:
+
 - Screen, FPS, and ID constants
 - Ship, bullet, asteroid, and UFO parameters
 - Colors and asset paths
@@ -151,6 +163,7 @@ Current responsibilities:
 Project documentation.
 
 Current state:
+
 - Contains this document (`ARCHITECTURE.md`)
 
 ### `assets/`
@@ -158,11 +171,13 @@ Current state:
 Static game resources.
 
 Current state:
+
 - `sounds/` folder with WAV effects used by the pygame client
 
 ## 4. Module Dependencies (Current)
 
 Main import flow observed today:
+
 - `main.py` -> `client.game`
 - `client.game` -> `client.audio`, `client.controls`, `client.renderer`,
   `core.config`, `core.world`
@@ -175,6 +190,7 @@ Main import flow observed today:
 - `core.utils` -> `core.config`
 
 Architectural health rule:
+
 - Avoid circular imports
 
 ## 5. Architectural Notes
@@ -182,6 +198,7 @@ Architectural health rule:
 The current separation between `core/` and `client/` already exists and is in use.
 
 Important:
+
 - `client/` concentrates pygame integration for input, rendering, and audio.
 - `core/` concentrates rules, game state, and entities.
 - `core/` still depends on `pygame.sprite` and `pygame.math.Vector2`, so
@@ -194,11 +211,13 @@ Important:
 ### 6.1 Cohesion (7/10)
 
 Strengths:
+
 - `config.py` has perfect single responsibility (constants only)
 - `commands.py` is a pure dataclass with no behavior
 - Each entity (`Bullet`, `Asteroid`, `Ship`, `UFO`) has clear focus
 
 Areas for improvement:
+
 - `Game` (client/game.py) accumulates too many responsibilities: game loop,
   pygame initialization, audio channel management, UFO siren logic, and
   event handling. Should extract `AudioManager`.
@@ -210,12 +229,14 @@ Areas for improvement:
 ### 6.2 Coupling (5/10)
 
 Main problem: core/ directly depends on pygame:
+
 - Entities inherit from `pygame.sprite.Sprite`
 - `World` uses `pygame.sprite.Group`
 - `Vec` is an alias for `pygame.math.Vector2`
 - The core/client separation is partial -- core is not framework-agnostic
 
 Other issues:
+
 - `Renderer` uses `isinstance` chains to decide how to draw each
   entity -- impossible to add a new entity without modifying Renderer.
 - Global config `C.` imported in ~35 references without dependency injection.
@@ -224,6 +245,7 @@ Other issues:
 ### 6.3 Maintainability (6/10)
 
 Magic numbers scattered throughout the code:
+
 - `entities.py`: polygon steps (12/10/8), jitter (0.75-1.2), ship
   angle (140.0), bullet spawn offset (+6)
 - `world.py`: minimum spawn distance (150), split speed multiplier (1.2),
@@ -232,21 +254,25 @@ Magic numbers scattered throughout the code:
 - `renderer.py`: layout positions (170, 350, 340, 260)
 
 Code duplication:
+
 - Timer/countdown pattern repeated 5+ times without a utility
 - 5 collision methods with repetitive structure
 
 Known bug:
+
 - Hyperspace can teleport the player inside an asteroid (no safe
   position check).
 
 ### 6.4 Readability (7/10)
 
 Strengths:
+
 - Descriptive names: `rotate_left`, `spawn_player()`, `_handle_collisions()`
 - Type hints present on most signatures
 - Consistent private method `_` prefix
 
 Areas for improvement:
+
 - Scenes as hardcoded strings ("menu", "play", "game_over") instead of Enum
 - `UFO_BULLET_OWNER = -10` without explanatory comment
 
