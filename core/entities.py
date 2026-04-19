@@ -80,6 +80,25 @@ class Asteroid(pg.sprite.Sprite):
         self.rect.center = (int(self.pos.x), int(self.pos.y))
 
 
+class PowerUp(pg.sprite.Sprite):
+    """Collectable power-up on the map."""
+
+    def __init__(self, pos: Vec, kind: str, ttl: float = C.POWERUP_TTL) -> None:
+        super().__init__()
+        self.pos = Vec(pos)
+        self.kind = kind
+        self.ttl = float(ttl)
+        self.r = int(C.POWERUP_RADIUS)
+        self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
+
+    def update(self, dt: float) -> None:
+        self.ttl -= dt
+        if self.ttl <= 0.0:
+            self.kill()
+            return
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
+
+
 class Ship(pg.sprite.Sprite):
     """Ship controlled by command (does not read keyboard)."""
 
@@ -90,6 +109,9 @@ class Ship(pg.sprite.Sprite):
         self.vel = Vec(0, 0)
         self.angle = -90.0
         self.cool = 0.0
+        self.shield_time = 0.0
+        self.shield_cool = 0.0
+        self.double_shot_time = 0.0
         self.target_pos: Vec | None = None
         self.invuln = 0.0
         self.r = int(C.SHIP_RADIUS)
@@ -100,7 +122,7 @@ class Ship(pg.sprite.Sprite):
         cmd: PlayerCommand,
         dt: float,
         bullets: pg.sprite.Group,
-    ) -> "Bullet | None":
+    ) -> list["Bullet"]:
         if cmd.rotate_left and not cmd.rotate_right:
             self.angle -= C.SHIP_TURN_SPEED * dt
         elif cmd.rotate_right and not cmd.rotate_left:
@@ -114,26 +136,70 @@ class Ship(pg.sprite.Sprite):
         if cmd.shoot:
             return self._try_fire(bullets)
 
-        return None
+        return []
 
-    def _try_fire(self, bullets: pg.sprite.Group) -> "Bullet | None":
+    def _try_fire(self, bullets: pg.sprite.Group) -> list["Bullet"]:
         if self.cool > 0.0:
-            return None
+            return []
 
         count = 0
         for bullet in bullets:
             if getattr(bullet, "owner_id", None) == self.player_id:
                 count += 1
 
-        if count >= C.MAX_BULLETS_PER_PLAYER:
-            return None
+        shot_count = self._active_shot_count()
+        if count + shot_count > C.MAX_BULLETS_PER_PLAYER:
+            return []
 
         dirv = angle_to_vec(self.angle)
-        pos = self.pos + dirv * (self.r + C.BULLET_SPAWN_OFFSET)
-        vel = self.vel + dirv * C.SHIP_BULLET_SPEED
+        if shot_count <= 1:
+            angle_offsets = [0.0]
+        elif shot_count == 2:
+            angle_offsets = [-C.SHIP_SPREAD_ANGLE_DEG, C.SHIP_SPREAD_ANGLE_DEG]
+        else:
+            step = C.SHIP_SPREAD_ANGLE_DEG
+            mid = shot_count // 2
+            angle_offsets = [(i - mid) * step for i in range(shot_count)]
+
+        created: list[Bullet] = []
+        for offset in angle_offsets:
+            shot_dir = rotate_vec(dirv, offset)
+            pos = self.pos + shot_dir * (self.r + C.BULLET_SPAWN_OFFSET)
+            vel = self.vel + shot_dir * C.SHIP_BULLET_SPEED
+            created.append(Bullet(self.player_id, pos, vel, ttl=C.BULLET_TTL))
 
         self.cool = float(C.SHIP_FIRE_RATE)
-        return Bullet(self.player_id, pos, vel, ttl=C.BULLET_TTL)
+        return created
+
+    def _active_shot_count(self) -> int:
+        if self.double_shot_time > 0.0:
+            return int(C.SHIP_DOUBLE_SHOT_COUNT)
+        return int(C.SHIP_BASE_SHOT_COUNT)
+
+    def activate_double_shot(self) -> None:
+        self.double_shot_time = float(C.DOUBLE_SHOT_DURATION)
+
+    def has_double_shot(self) -> bool:
+        return self.double_shot_time > 0.0
+
+    def try_activate_shield(self) -> bool:
+        if self.shield_time > 0.0 or self.shield_cool > 0.0:
+            return False
+
+        self.shield_time = float(C.SHIP_SHIELD_DURATION)
+        self.shield_cool = float(C.SHIP_SHIELD_DURATION + C.SHIP_SHIELD_COOLDOWN)
+        return True
+
+    def has_active_shield(self) -> bool:
+        return self.shield_time > 0.0
+
+    def consume_shield_hit(self) -> bool:
+        if self.shield_time <= 0.0:
+            return False
+
+        self.shield_time = 0.0
+        self.invuln = max(self.invuln, float(C.SHIP_SHIELD_HIT_INVULN))
+        return True
 
     def hyperspace(self) -> None:
         self.pos = Vec(uniform(0, C.WIDTH), uniform(0, C.HEIGHT))
@@ -145,6 +211,21 @@ class Ship(pg.sprite.Sprite):
             self.cool -= dt
             if self.cool < 0.0:
                 self.cool = 0.0
+
+        if self.shield_time > 0.0:
+            self.shield_time -= dt
+            if self.shield_time < 0.0:
+                self.shield_time = 0.0
+
+        if self.shield_cool > 0.0:
+            self.shield_cool -= dt
+            if self.shield_cool < 0.0:
+                self.shield_cool = 0.0
+
+        if self.double_shot_time > 0.0:
+            self.double_shot_time -= dt
+            if self.double_shot_time < 0.0:
+                self.double_shot_time = 0.0
 
         if self.invuln > 0.0:
             self.invuln -= dt

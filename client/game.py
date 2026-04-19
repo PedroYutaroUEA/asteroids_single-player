@@ -113,11 +113,18 @@ class Game:
             return
 
         self.renderer.draw_world(self.world)
+        ship = self.world.get_ship(C.LOCAL_PLAYER_ID)
+        double_shot_time = ship.double_shot_time if ship is not None else 0.0
+        shield_time = ship.shield_time if ship is not None else 0.0
+        shield_cool = ship.shield_cool if ship is not None else 0.0
         self.renderer.draw_hud(
             self.world.scores.get(C.LOCAL_PLAYER_ID, 0),
             self.world.lives.get(C.LOCAL_PLAYER_ID, 0),
             self.world.wave,
             self.scene,
+            double_shot_time,
+            shield_time,
+            shield_cool,
         )
         pg.display.flip()
 

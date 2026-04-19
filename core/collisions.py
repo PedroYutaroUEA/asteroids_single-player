@@ -18,6 +18,7 @@ class CollisionResult:
     score_deltas: dict[PlayerId, int] = field(default_factory=dict)
     ship_deaths: list[PlayerId] = field(default_factory=list)
     asteroids_to_spawn: list[tuple[Vec, Vec, str]] = field(default_factory=list)
+    powerups_to_spawn: list[tuple[Vec, str]] = field(default_factory=list)
 
 
 class CollisionManager:
@@ -113,8 +114,12 @@ class CollisionManager:
         for ship in ships.values():
             if ship.invuln > 0.0:
                 continue
-            for ast in asteroids:
+            for ast in list(asteroids):
                 if (ast.pos - ship.pos).length() < (ast.r + ship.r):
+                    if ship.consume_shield_hit():
+                        result.events.append("shield_block")
+                        self._split_asteroid(ast, result=result)
+                        return
                     result.ship_deaths.append(ship.player_id)
                     return
 
@@ -132,6 +137,9 @@ class CollisionManager:
                     continue
                 if (bullet.pos - ship.pos).length() < (bullet.r + ship.r):
                     bullet.kill()
+                    if ship.consume_shield_hit():
+                        result.events.append("shield_block")
+                        return
                     result.ship_deaths.append(ship.player_id)
                     return
 
@@ -149,6 +157,8 @@ class CollisionManager:
             result.score_deltas[scorer_id] = (
                 result.score_deltas.get(scorer_id, 0) + C.AST_SIZES[ast.size]["score"]
             )
+            if uniform(0, 1) < C.POWERUP_DROP_CHANCE:
+                result.powerups_to_spawn.append((Vec(ast.pos), "double_shot"))
 
         split = C.AST_SIZES[ast.size]["split"]
         pos = Vec(ast.pos)
