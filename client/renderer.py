@@ -49,6 +49,8 @@ class Renderer:
         double_shot_time: float = 0.0,
         shield_time: float = 0.0,
         shield_cool: float = 0.0,
+        time_stop_timer: float = 0.0,  
+        time_stop_cool: float = 0.0,
     ) -> None:
         if state != SceneState.PLAY:
             return
@@ -99,6 +101,28 @@ class Renderer:
         if shield_fill.width > 0:
             pg.draw.rect(self.screen, self.config.WHITE, shield_fill, width=0)
 
+        if time_stop_timer > 0.0:
+            ts_label = f"TIME STOP {time_stop_timer:.1f}s"
+            ts_ratio = min(1.0, time_stop_timer / self.config.TIME_STOP_DURATION)
+            ts_color = self.config.WHITE
+        elif time_stop_cool > 0.0:
+            ts_label = f"TIME STOP CD {time_stop_cool:.1f}s"
+            total = self.config.TIME_STOP_DURATION + self.config.TIME_STOP_COOLDOWN
+            ts_ratio = 1.0 - min(1.0, time_stop_cool / total)
+            ts_color = self.config.WHITE
+        else:
+            ts_label = "TIME STOP READY"
+            ts_ratio = 1.0
+            ts_color = self.config.WHITE
+
+        ts_y = shield_y + 56
+        self.screen.blit(self.font.render(ts_label, True, ts_color), (bar_x, ts_y))
+        ts_border = pg.Rect(bar_x, ts_y + 30, bar_w, bar_h)
+        ts_fill   = pg.Rect(bar_x, ts_y + 30, int(bar_w * ts_ratio), bar_h)
+        pg.draw.rect(self.screen, ts_color, ts_border, width=1)
+        if ts_fill.width > 0:
+            pg.draw.rect(self.screen, ts_color, ts_fill)
+
     def draw_menu(self) -> None:
         self._draw_text(
             self.big,
@@ -120,7 +144,7 @@ class Renderer:
         )
         self._draw_text(
             self.font,
-            "Shoot: SPACE | Shield: E | Hyperspace: LSHIFT",
+            "Shoot: SPACE | Shield: E | Hyperspace: LSHIFT | Time Stop: Q",
             self.config.WIDTH // 2 - 230,
             325,
         )

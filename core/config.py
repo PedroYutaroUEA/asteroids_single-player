@@ -31,6 +31,8 @@ HYPERSPACE_COST = 250
 SHIP_NOSE_ANGLE = 140.0
 SHIP_NOSE_SCALE = 0.9
 BULLET_SPAWN_OFFSET = 6
+TIME_STOP_DURATION = 10.0
+TIME_STOP_COOLDOWN = 15.0   
 
 POWERUP_RADIUS = 10
 POWERUP_TTL = 10.0
@@ -98,3 +100,4 @@ SHIP_EXPLOSION = "ship_explosion.wav"
 THRUST_LOOP = "thrust_loop.wav"
 UFO_SIREN_BIG = "ufo_siren_big.wav"
 UFO_SIREN_SMALL = "ufo_siren_small.wav"
+TIME_STOP_SOUND = "time_stop.wav"

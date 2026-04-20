@@ -41,6 +41,8 @@ class World:
         self._collision_mgr = CollisionManager()
 
         self.game_over = False
+        self.time_stop_timer = 0.0
+        self.time_stop_cool = 0.0
 
         self.spawn_player(C.LOCAL_PLAYER_ID)
 
@@ -111,10 +113,33 @@ class World:
         if self.game_over:
             return
 
-        self._apply_commands(dt, commands_by_player_id)
-        self.all_sprites.update(dt)
+        if self.time_stop_timer > 0.0:
+            self.time_stop_timer -= dt
+            if self.time_stop_timer < 0.0:
+                self.time_stop_timer = 0.0
+            enemy_dt = 0.0
+        else:
+            enemy_dt = dt
 
-        self._update_ufos(dt)
+        if self.time_stop_cool > 0.0:
+            self.time_stop_cool -= dt
+            if self.time_stop_cool < 0.0:
+                self.time_stop_cool = 0.0
+    
+
+        self._apply_commands(dt, commands_by_player_id)  
+
+        
+        for ship in self.ships.values():
+            ship.update(dt)                          
+        for bullet in self.bullets:
+            bullet.update(dt)                        
+        for ast in self.asteroids:
+            ast.update(enemy_dt)                    
+        for powerup in self.powerups:
+            powerup.update(dt)                       
+
+        self._update_ufos(enemy_dt)                 
         self._update_timers(dt)
         self._handle_collisions()
         self._collect_powerups()
@@ -129,6 +154,11 @@ class World:
             ship = self.get_ship(player_id)
             if ship is None:
                 continue
+            
+            if cmd.time_stop and self.time_stop_timer <= 0.0 and self.time_stop_cool <= 0.0:
+                self.time_stop_timer = float(C.TIME_STOP_DURATION)
+                self.time_stop_cool = float(C.TIME_STOP_DURATION + C.TIME_STOP_COOLDOWN)
+                self.events.append("time_stop")
 
             if cmd.shield and ship.try_activate_shield():
                 self.events.append("shield_on")

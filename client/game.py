@@ -117,6 +117,9 @@ class Game:
         double_shot_time = ship.double_shot_time if ship is not None else 0.0
         shield_time = ship.shield_time if ship is not None else 0.0
         shield_cool = ship.shield_cool if ship is not None else 0.0
+        time_stop_timer = self.world.time_stop_timer
+        time_stop_cool = self.world.time_stop_cool
+
         self.renderer.draw_hud(
             self.world.scores.get(C.LOCAL_PLAYER_ID, 0),
             self.world.lives.get(C.LOCAL_PLAYER_ID, 0),
@@ -125,6 +128,8 @@ class Game:
             double_shot_time,
             shield_time,
             shield_cool,
+            time_stop_timer, 
+            time_stop_cool,
         )
         pg.display.flip()
 

@@ -19,7 +19,7 @@ class SoundPack:
     thrust_loop: pg.mixer.Sound
     ufo_siren_big: pg.mixer.Sound
     ufo_siren_small: pg.mixer.Sound
-
+    time_stop: pg.mixer.Sound
 
 def load_sounds(base_path: str) -> SoundPack:
     def s(name: str) -> pg.mixer.Sound:
@@ -33,4 +33,5 @@ def load_sounds(base_path: str) -> SoundPack:
         thrust_loop=s(C.THRUST_LOOP),
         ufo_siren_big=s(C.UFO_SIREN_BIG),
         ufo_siren_small=s(C.UFO_SIREN_SMALL),
+        time_stop=s(C.TIME_STOP_SOUND),
     )
