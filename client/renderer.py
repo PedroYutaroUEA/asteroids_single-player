@@ -3,7 +3,7 @@
 import pygame as pg
 
 from core import config as C
-from core.entities import Asteroid, Bullet, Ship, UFO
+from core.entities import Asteroid, Bullet, PowerUp, Ship, UFO
 from core.scene import SceneState
 
 
@@ -25,6 +25,7 @@ class Renderer:
         self._draw_dispatch: dict[type, callable] = {
             Bullet: self._draw_bullet,
             Asteroid: self._draw_asteroid,
+            PowerUp: self._draw_powerup,
             Ship: self._draw_ship,
             UFO: self._draw_ufo,
         }
@@ -45,6 +46,9 @@ class Renderer:
         lives: int,
         wave: int,
         state: SceneState,
+        double_shot_time: float = 0.0,
+        shield_time: float = 0.0,
+        shield_cool: float = 0.0,
     ) -> None:
         if state != SceneState.PLAY:
             return
@@ -53,18 +57,78 @@ class Renderer:
         label = self.font.render(text, True, self.config.WHITE)
         self.screen.blit(label, (10, 10))
 
+        bar_w = 180
+        bar_h = 10
+        bar_x = self.config.WIDTH - 250
+
+        if double_shot_time > 0.0:
+            max_time = float(self.config.DOUBLE_SHOT_DURATION)
+            ratio = min(1.0, max(0.0, double_shot_time / max_time))
+
+            info = self.font.render(
+                f"DOUBLE SHOT {double_shot_time:0.1f}s",
+                True,
+                self.config.WHITE,
+            )
+            self.screen.blit(info, (bar_x, 10))
+
+            border = pg.Rect(bar_x, 40, bar_w, bar_h)
+            fill = pg.Rect(bar_x, 40, int(bar_w * ratio), bar_h)
+            pg.draw.rect(self.screen, self.config.WHITE, border, width=1)
+            if fill.width > 0:
+                pg.draw.rect(self.screen, self.config.WHITE, fill, width=0)
+
+        if shield_time > 0.0:
+            shield_label = f"SHIELD ACTIVE {shield_time:0.1f}s"
+            shield_ratio = min(1.0, max(0.0, shield_time / self.config.SHIP_SHIELD_DURATION))
+        elif shield_cool > 0.0:
+            shield_label = f"SHIELD COOLDOWN {shield_cool:0.1f}s"
+            total_cool = self.config.SHIP_SHIELD_DURATION + self.config.SHIP_SHIELD_COOLDOWN
+            shield_ratio = 1.0 - min(1.0, max(0.0, shield_cool / total_cool))
+        else:
+            shield_label = "SHIELD READY"
+            shield_ratio = 1.0
+
+        shield_y = 56 if double_shot_time > 0.0 else 10
+        shield_info = self.font.render(shield_label, True, self.config.WHITE)
+        self.screen.blit(shield_info, (bar_x, shield_y))
+
+        shield_border = pg.Rect(bar_x, shield_y + 30, bar_w, bar_h)
+        shield_fill = pg.Rect(bar_x, shield_y + 30, int(bar_w * shield_ratio), bar_h)
+        pg.draw.rect(self.screen, self.config.WHITE, shield_border, width=1)
+        if shield_fill.width > 0:
+            pg.draw.rect(self.screen, self.config.WHITE, shield_fill, width=0)
+
     def draw_menu(self) -> None:
         self._draw_text(
             self.big,
             "ASTEROIDS",
             self.config.WIDTH // 2 - 170,
-            200,
+            130,
         )
         self._draw_text(
             self.font,
             "Press any key",
             self.config.WIDTH // 2 - 170,
-            350,
+            220,
+        )
+        self._draw_text(
+            self.font,
+            "Move: W/UP | Turn: A,D or LEFT,RIGHT",
+            self.config.WIDTH // 2 - 230,
+            290,
+        )
+        self._draw_text(
+            self.font,
+            "Shoot: SPACE | Shield: E | Hyperspace: LSHIFT",
+            self.config.WIDTH // 2 - 230,
+            325,
+        )
+        self._draw_text(
+            self.font,
+            "Double Shot is a pickup (diamond on map)",
+            self.config.WIDTH // 2 - 230,
+            360,
         )
 
     def draw_game_over(self) -> None:
@@ -118,6 +182,17 @@ class Renderer:
         ]
         pg.draw.polygon(self.screen, self.config.WHITE, points, width=1)
 
+        if ship.has_active_shield():
+            center = (int(ship.pos.x), int(ship.pos.y))
+            pulse = 8 + int(ship.shield_time * 6) % 3
+            pg.draw.circle(
+                self.screen,
+                self.config.WHITE,
+                center,
+                ship.r + pulse,
+                width=1,
+            )
+
         if ship.invuln > 0.0 and int(ship.invuln * 10) % 2 == 0:
             center = (int(ship.pos.x), int(ship.pos.y))
             pg.draw.circle(
@@ -139,3 +214,14 @@ class Renderer:
         cup = pg.Rect(0, 0, int(width * 0.5), int(height * 0.7))
         cup.center = (int(ufo.pos.x), int(ufo.pos.y - height * 0.3))
         pg.draw.ellipse(self.screen, self.config.WHITE, cup, width=1)
+
+    def _draw_powerup(self, powerup: PowerUp) -> None:
+        center = (int(powerup.pos.x), int(powerup.pos.y))
+        r = powerup.r
+        points = [
+            (center[0], center[1] - r),
+            (center[0] + r, center[1]),
+            (center[0], center[1] + r),
+            (center[0] - r, center[1]),
+        ]
+        pg.draw.polygon(self.screen, self.config.WHITE, points, width=1)

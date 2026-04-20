@@ -11,4 +11,5 @@ class PlayerCommand:
     rotate_right: bool = False
     thrust: bool = False
     shoot: bool = False
+    shield: bool = False
     hyperspace: bool = False

@@ -10,6 +10,7 @@ class InputMapper:
 
     def __init__(self) -> None:
         self._shoot_pressed = False
+        self._shield_pressed = False
         self._hyper_pressed = False
 
     def handle_event(self, event: pg.event.Event) -> None:
@@ -18,6 +19,8 @@ class InputMapper:
 
         if event.key == pg.K_SPACE:
             self._shoot_pressed = True
+        elif event.key == pg.K_e:
+            self._shield_pressed = True
         elif event.key == pg.K_LSHIFT:
             self._hyper_pressed = True
 
@@ -31,9 +34,11 @@ class InputMapper:
             rotate_right=rotate_right,
             thrust=thrust,
             shoot=self._shoot_pressed,
+            shield=self._shield_pressed,
             hyperspace=self._hyper_pressed,
         )
 
         self._shoot_pressed = False
+        self._shield_pressed = False
         self._hyper_pressed = False
         return cmd

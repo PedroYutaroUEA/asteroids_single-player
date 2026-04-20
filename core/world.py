@@ -9,7 +9,7 @@ import pygame as pg
 from core import config as C
 from core.collisions import CollisionManager
 from core.commands import PlayerCommand
-from core.entities import Asteroid, Ship, UFO
+from core.entities import Asteroid, PowerUp, Ship, UFO
 from core.utils import Vec, rand_edge_pos
 
 PlayerId = int
@@ -28,6 +28,7 @@ class World:
         self.bullets = pg.sprite.Group()
         self.asteroids = pg.sprite.Group()
         self.ufos = pg.sprite.Group()
+        self.powerups = pg.sprite.Group()
         self.all_sprites = pg.sprite.Group()
 
         self.scores: Dict[PlayerId, int] = {}
@@ -95,6 +96,11 @@ class World:
 
         self.all_sprites.add(ufo)
 
+    def spawn_powerup(self, pos: Vec, kind: str) -> None:
+        powerup = PowerUp(pos, kind)
+        self.powerups.add(powerup)
+        self.all_sprites.add(powerup)
+
     def update(
         self,
         dt: float,
@@ -111,6 +117,7 @@ class World:
         self._update_ufos(dt)
         self._update_timers(dt)
         self._handle_collisions()
+        self._collect_powerups()
         self._maybe_start_next_wave(dt)
 
     def _apply_commands(
@@ -123,16 +130,19 @@ class World:
             if ship is None:
                 continue
 
+            if cmd.shield and ship.try_activate_shield():
+                self.events.append("shield_on")
+
             if cmd.hyperspace:
                 ship.hyperspace()
                 self.scores[player_id] = max(
                     0, self.scores[player_id] - C.HYPERSPACE_COST
                 )
 
-            bullet = ship.apply_command(cmd, dt, self.bullets)
-            if bullet is not None:
-                self.bullets.add(bullet)
-                self.all_sprites.add(bullet)
+            created_bullets = ship.apply_command(cmd, dt, self.bullets)
+            if created_bullets:
+                self.bullets.add(*created_bullets)
+                self.all_sprites.add(*created_bullets)
                 self.events.append("player_shoot")
 
     def _update_ufos(self, dt: float) -> None:
@@ -195,10 +205,25 @@ class World:
         for pos, vel, size in result.asteroids_to_spawn:
             self.spawn_asteroid(pos, vel, size)
 
+        for pos, kind in result.powerups_to_spawn:
+            self.spawn_powerup(pos, kind)
+
         for player_id in result.ship_deaths:
             ship = self.get_ship(player_id)
             if ship is not None:
                 self._ship_die(ship)
+
+    def _collect_powerups(self) -> None:
+        for ship in self.ships.values():
+            for powerup in list(self.powerups):
+                if (ship.pos - powerup.pos).length() >= (ship.r + powerup.r):
+                    continue
+
+                if powerup.kind == "double_shot":
+                    ship.activate_double_shot()
+                    self.events.append("powerup_pick")
+
+                powerup.kill()
 
     def _ship_die(self, ship: Ship) -> None:
         pid = ship.player_id
