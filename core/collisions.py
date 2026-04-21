@@ -16,7 +16,7 @@ class CollisionResult:
 
     events: list[str] = field(default_factory=list)
     score_deltas: dict[PlayerId, int] = field(default_factory=dict)
-    ship_deaths: list[PlayerId] = field(default_factory=list)
+    ship_deaths: list[dict[PlayerId, bool]] = field(default_factory=list)
     asteroids_to_spawn: list[tuple[Vec, Vec, str]] = field(default_factory=list)
     powerups_to_spawn: list[tuple[Vec, str]] = field(default_factory=list)
 
@@ -30,6 +30,7 @@ class CollisionManager:
         bullets: pg.sprite.Group,
         asteroids: pg.sprite.Group,
         ufos: pg.sprite.Group,
+        black_hole: pg.sprite.Sprite,
     ) -> CollisionResult:
         result = CollisionResult()
         self._bullets_vs_asteroids(bullets, asteroids, result)
@@ -37,6 +38,7 @@ class CollisionManager:
         self._ufo_vs_asteroids(ufos, asteroids, result)
         self._ship_vs_asteroids(ships, asteroids, result)
         self._ship_vs_ufo_bullets(ships, bullets, result)
+        self._ship_vs_black_hole(ships, black_hole, result)
         return result
 
     def _bullets_vs_asteroids(
@@ -120,7 +122,20 @@ class CollisionManager:
                         result.events.append("shield_block")
                         self._split_asteroid(ast, result=result)
                         return
-                    result.ship_deaths.append(ship.player_id)
+                    result.ship_deaths.append({ship.player_id: False})
+                    return
+
+    def _ship_vs_black_hole(
+        self,
+        ships: dict[PlayerId, Ship],
+        black_hole: pg.sprite.Sprite,
+        result: CollisionResult,
+    ) -> None:
+        if black_hole:
+            for ship in ships.values():
+                dist = (black_hole.pos - ship.pos).length()
+                if dist < black_hole.r + ship.r:
+                    result.ship_deaths.append({ship.player_id: True})
                     return
 
     def _ship_vs_ufo_bullets(
@@ -140,7 +155,7 @@ class CollisionManager:
                     if ship.consume_shield_hit():
                         result.events.append("shield_block")
                         return
-                    result.ship_deaths.append(ship.player_id)
+                    result.ship_deaths.append({ship.player_id: False})
                     return
 
     def _split_asteroid(

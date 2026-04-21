@@ -13,6 +13,7 @@ class AudioManager:
         self._thrust_ch = pg.mixer.Channel(1)
         self._sfx_ch = pg.mixer.Channel(2)
         self._ufo_ch = pg.mixer.Channel(3)
+        self._blackhole_ch = pg.mixer.Channel(4)
         self._ufo_siren_kind: str | None = None
 
     def play_events(self, events: list[str]) -> None:
@@ -40,6 +41,15 @@ class AudioManager:
             if self._thrust_ch.get_busy():
                 self._thrust_ch.stop()
 
+    def update_blackhole_audio(self, black_hole) -> None:
+        if black_hole is None:
+            if self._blackhole_ch.get_busy():
+                self._blackhole_ch.stop()
+            return
+
+        if not self._blackhole_ch.get_busy():
+            self._blackhole_ch.play(self.sounds.blackhole, loops=-1)
+
     def update_ufo_siren(self, ufos: list) -> None:
         kind = self._choose_ufo_siren(ufos)
         if kind is None:
@@ -65,6 +75,8 @@ class AudioManager:
             self._thrust_ch.stop()
         if self._ufo_ch.get_busy():
             self._ufo_ch.stop()
+        if self._blackhole_ch.get_busy():
+            self._blackhole_ch.stop()
         self._ufo_siren_kind = None
 
     def _choose_ufo_siren(self, ufos: list) -> str | None:

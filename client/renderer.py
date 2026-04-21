@@ -3,7 +3,7 @@
 import pygame as pg
 
 from core import config as C
-from core.entities import Asteroid, Bullet, PowerUp, Ship, UFO
+from core.entities import Asteroid, Bullet, PowerUp, Ship, UFO, BlackHole
 from core.scene import SceneState
 
 
@@ -28,6 +28,7 @@ class Renderer:
             PowerUp: self._draw_powerup,
             Ship: self._draw_ship,
             UFO: self._draw_ufo,
+            BlackHole: self._draw_black_hole,
         }
 
     def clear(self) -> None:
@@ -51,7 +52,7 @@ class Renderer:
         shield_cool: float = 0.0,
         time_stop_timer: float = 0.0,
         time_stop_cool: float = 0.0,
-        ship=None
+        ship=None,
     ) -> None:
         if state != SceneState.PLAY:
             return
@@ -270,14 +271,34 @@ class Renderer:
         cup.center = (int(ufo.pos.x), int(ufo.pos.y - height * 0.3))
         pg.draw.ellipse(self.screen, self.config.WHITE, cup, width=1)
 
+    def _draw_black_hole(self, bh: BlackHole):
+        # BLACK HOLE AURA
+        pg.draw.circle(self.screen, C.DARK_PURPLE, bh.pos, bh.visual_r)
+        # BLACK HOLE RING
+        pg.draw.circle(self.screen, C.VIOLET, bh.pos, bh.visual_r - 4, 2)
+        # BLACK HOLE CENTER
+        pg.draw.circle(self.screen, C.BLACK, bh.pos, bh.r)
+
     def _draw_powerup(self, powerup: PowerUp) -> None:
         center = (int(powerup.pos.x), int(powerup.pos.y))
         r = powerup.r
         if powerup.kind == "repair":
             # círculo + cruz
             pg.draw.circle(self.screen, self.config.GREEN, center, r, 1)
-            pg.draw.line(self.screen, self.config.GREEN, (center[0], center[1]-r), (center[0], center[1]+r), 2)
-            pg.draw.line(self.screen, self.config.GREEN, (center[0]-r, center[1]), (center[0]+r, center[1]), 2)
+            pg.draw.line(
+                self.screen,
+                self.config.GREEN,
+                (center[0], center[1] - r),
+                (center[0], center[1] + r),
+                2,
+            )
+            pg.draw.line(
+                self.screen,
+                self.config.GREEN,
+                (center[0] - r, center[1]),
+                (center[0] + r, center[1]),
+                2,
+            )
 
         elif powerup.kind == "orb":
             pg.draw.circle(self.screen, self.config.PURPLE, center, r, 1)
