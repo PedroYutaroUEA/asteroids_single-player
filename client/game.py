@@ -130,6 +130,7 @@ class Game:
             shield_cool,
             time_stop_timer, 
             time_stop_cool,
+            ship,
         )
         pg.display.flip()
 

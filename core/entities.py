@@ -116,6 +116,9 @@ class Ship(pg.sprite.Sprite):
         self.invuln = 0.0
         self.r = int(C.SHIP_RADIUS)
         self.rect = pg.Rect(0, 0, self.r * 2, self.r * 2)
+        self.special_energy = 0.0
+        self.special_active = False
+        self.special_fire_cd = 0.0
 
     def apply_command(
         self,
@@ -206,7 +209,31 @@ class Ship(pg.sprite.Sprite):
         self.vel.xy = (0, 0)
         self.invuln = float(C.SAFE_SPAWN_TIME)
 
-    def update(self, dt: float) -> None:
+    def try_activate_special(self, bullets: pg.sprite.Group) -> list["Bullet"]:
+        created: list["Bullet"] = []
+
+        # BARRA CHEIA → ataque radial
+        if self.special_energy >= C.SPECIAL_MAX:
+            directions = 12
+            for i in range(directions):
+                ang = i * (360 / directions)
+                dirv = angle_to_vec(ang)
+                pos = self.pos + dirv * (self.r + C.BULLET_SPAWN_OFFSET)
+                vel = dirv * C.SHIP_BULLET_SPEED
+                created.append(Bullet(self.player_id, pos, vel))
+
+            self.special_energy = 0.0
+            self.special_active = False
+            self.special_fire_cd = 0.0
+
+        # BARRA PARCIAL → minigun
+        elif self.special_energy > 0:
+            self.special_active = True
+            self.special_fire_cd = 0.0
+        return created
+
+    def update(self, dt: float) -> list["Bullet"]:
+        created: list["Bullet"] = []
         if self.cool > 0.0:
             self.cool -= dt
             if self.cool < 0.0:
@@ -232,9 +259,25 @@ class Ship(pg.sprite.Sprite):
             if self.invuln < 0.0:
                 self.invuln = 0.0
 
+        if self.special_active:
+            self.special_energy -= C.SPECIAL_DRAIN * dt
+            self.special_fire_cd -= dt
+            
+            if self.special_fire_cd <= 0:
+                dirv = angle_to_vec(self.angle)
+                pos = self.pos + dirv * (self.r + C.BULLET_SPAWN_OFFSET)
+                vel = self.vel + dirv * C.SHIP_BULLET_SPEED
+                created.append(Bullet(self.player_id, pos, vel))
+                self.special_fire_cd = C.SPECIAL_FIRE_RATE
+
+            if self.special_energy <= 0:
+                self.special_energy = 0
+                self.special_active = False
+
         self.pos += self.vel * dt
         self.pos = wrap_pos(self.pos)
         self.rect.center = (int(self.pos.x), int(self.pos.y))
+        return created
 
     def ship_points(self) -> tuple[Vec, Vec, Vec]:
         """Return the 3 vertices of the ship triangle."""
