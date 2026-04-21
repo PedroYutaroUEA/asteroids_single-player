@@ -125,21 +125,19 @@ class World:
             self.time_stop_cool -= dt
             if self.time_stop_cool < 0.0:
                 self.time_stop_cool = 0.0
-    
 
-        self._apply_commands(dt, commands_by_player_id)  
+        self._apply_commands(dt, commands_by_player_id)
 
-        
         for ship in self.ships.values():
-            ship.update(dt)                          
+            ship.update(dt)
         for bullet in self.bullets:
-            bullet.update(dt)                        
+            bullet.update(dt)
         for ast in self.asteroids:
-            ast.update(enemy_dt)                    
+            ast.update(enemy_dt)
         for powerup in self.powerups:
-            powerup.update(dt)                       
+            powerup.update(dt)
 
-        self._update_ufos(enemy_dt)                 
+        self._update_ufos(enemy_dt)
         self._update_timers(dt)
         self._handle_collisions()
         self._collect_powerups()
@@ -154,8 +152,12 @@ class World:
             ship = self.get_ship(player_id)
             if ship is None:
                 continue
-            
-            if cmd.time_stop and self.time_stop_timer <= 0.0 and self.time_stop_cool <= 0.0:
+
+            if (
+                cmd.time_stop
+                and self.time_stop_timer <= 0.0
+                and self.time_stop_cool <= 0.0
+            ):
                 self.time_stop_timer = float(C.TIME_STOP_DURATION)
                 self.time_stop_cool = float(C.TIME_STOP_DURATION + C.TIME_STOP_COOLDOWN)
                 self.events.append("time_stop")
@@ -168,6 +170,7 @@ class World:
                 self.scores[player_id] = max(
                     0, self.scores[player_id] - C.HYPERSPACE_COST
                 )
+                self.events.append("hyperspace")
 
             created_bullets = ship.apply_command(cmd, dt, self.bullets)
             if created_bullets:
