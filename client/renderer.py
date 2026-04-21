@@ -52,6 +52,7 @@ class Renderer:
         shield_cool: float = 0.0,
         time_stop_timer: float = 0.0,
         time_stop_cool: float = 0.0,
+        ship=None,
     ) -> None:
         if state != SceneState.PLAY:
             return
@@ -80,6 +81,32 @@ class Renderer:
             pg.draw.rect(self.screen, self.config.WHITE, border, width=1)
             if fill.width > 0:
                 pg.draw.rect(self.screen, self.config.WHITE, fill, width=0)
+
+        if ship:
+            ratio = ship.special_energy / self.config.SPECIAL_MAX
+            x = 10
+            y = 60
+            w = 150
+            h = 8
+
+            special_label = "SPECIAL"
+            if ratio >= 1.0:
+                special_label = "FULL SPECIAL"
+
+            label = self.font.render(special_label, True, self.config.WHITE)
+            self.screen.blit(label, (x, y - 20))
+
+            border = pg.Rect(x, y, w, h)
+            fill = pg.Rect(x, y, int(w * ratio), h)
+            pg.draw.rect(self.screen, self.config.WHITE, border, 1)
+            if fill.width > 0:
+                pg.draw.rect(self.screen, self.config.WHITE, fill)
+
+            border = pg.Rect(x, y, w, h)
+            fill = pg.Rect(x, y, int(w * ratio), h)
+            pg.draw.rect(self.screen, self.config.WHITE, border, 1)
+            if fill.width > 0:
+                pg.draw.rect(self.screen, self.config.WHITE, fill)
 
         if shield_time > 0.0:
             shield_label = f"SHIELD ACTIVE {shield_time:0.1f}s"
@@ -137,26 +164,26 @@ class Renderer:
         )
         self._draw_text(
             self.font,
-            "Press any key",
+            "(Press any key to start)",
             self.config.WIDTH // 2 - 170,
             220,
         )
         self._draw_text(
             self.font,
-            "Move: W/UP | Turn: A,D or LEFT,RIGHT",
-            self.config.WIDTH // 2 - 230,
+            "Move: W/UP | Turn: A,D or LEFT,RIGHT | Shoot: SPACE",
+            self.config.WIDTH // 2 - 330,
             290,
         )
         self._draw_text(
             self.font,
-            "Shoot: SPACE | Shield: E | Hyperspace: LSHIFT | Time Stop: Q",
-            self.config.WIDTH // 2 - 230,
+            "Shield: E | Hyperspace: LSHIFT | Time Stop: Q",
+            self.config.WIDTH // 2 - 290,
             325,
         )
         self._draw_text(
             self.font,
             "Double Shot is a pickup (diamond on map)",
-            self.config.WIDTH // 2 - 230,
+            self.config.WIDTH // 2 - 260,
             360,
         )
 
@@ -169,8 +196,8 @@ class Renderer:
         )
         self._draw_text(
             self.font,
-            "Press any key",
-            self.config.WIDTH // 2 - 170,
+            "(Press any key to play again)",
+            self.config.WIDTH // 2 - 200,
             340,
         )
 
@@ -246,7 +273,7 @@ class Renderer:
 
     def _draw_black_hole(self, bh: BlackHole):
         # BLACK HOLE AURA
-        pg.draw.circle(self.screen, C.PURPLE, bh.pos, bh.visual_r)
+        pg.draw.circle(self.screen, C.DARK_PURPLE, bh.pos, bh.visual_r)
         # BLACK HOLE RING
         pg.draw.circle(self.screen, C.VIOLET, bh.pos, bh.visual_r - 4, 2)
         # BLACK HOLE CENTER
@@ -255,10 +282,32 @@ class Renderer:
     def _draw_powerup(self, powerup: PowerUp) -> None:
         center = (int(powerup.pos.x), int(powerup.pos.y))
         r = powerup.r
-        points = [
-            (center[0], center[1] - r),
-            (center[0] + r, center[1]),
-            (center[0], center[1] + r),
-            (center[0] - r, center[1]),
-        ]
-        pg.draw.polygon(self.screen, self.config.WHITE, points, width=1)
+        if powerup.kind == "repair":
+            # círculo + cruz
+            pg.draw.circle(self.screen, self.config.GREEN, center, r, 1)
+            pg.draw.line(
+                self.screen,
+                self.config.GREEN,
+                (center[0], center[1] - r),
+                (center[0], center[1] + r),
+                2,
+            )
+            pg.draw.line(
+                self.screen,
+                self.config.GREEN,
+                (center[0] - r, center[1]),
+                (center[0] + r, center[1]),
+                2,
+            )
+
+        elif powerup.kind == "orb":
+            pg.draw.circle(self.screen, self.config.PURPLE, center, r, 1)
+
+        else:
+            points = [
+                (center[0], center[1] - r),
+                (center[0] + r, center[1]),
+                (center[0], center[1] + r),
+                (center[0] - r, center[1]),
+            ]
+            pg.draw.polygon(self.screen, self.config.WHITE, points, width=1)
