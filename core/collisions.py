@@ -157,7 +157,12 @@ class CollisionManager:
             result.score_deltas[scorer_id] = (
                 result.score_deltas.get(scorer_id, 0) + C.AST_SIZES[ast.size]["score"]
             )
-            if uniform(0, 1) < C.POWERUP_DROP_CHANCE:
+            r = uniform(0, 1)
+            if r < C.REPAIR_DROP_CHANCE:
+                result.powerups_to_spawn.append((Vec(ast.pos), "repair"))
+            elif r < C.REPAIR_DROP_CHANCE + C.ORB_DROP_CHANCE:
+                result.powerups_to_spawn.append((Vec(ast.pos), "orb"))
+            elif r < C.REPAIR_DROP_CHANCE + C.ORB_DROP_CHANCE + C.POWERUP_DROP_CHANCE:
                 result.powerups_to_spawn.append((Vec(ast.pos), "double_shot"))
 
         split = C.AST_SIZES[ast.size]["split"]

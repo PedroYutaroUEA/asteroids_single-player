@@ -13,6 +13,7 @@ class InputMapper:
         self._shield_pressed = False
         self._hyper_pressed = False
         self._time_stop_pressed = False
+        self._special_pressed = False
 
     def handle_event(self, event: pg.event.Event) -> None:
         if event.type != pg.KEYDOWN:
@@ -26,6 +27,8 @@ class InputMapper:
             self._hyper_pressed = True
         elif event.key == pg.K_q:             
             self._time_stop_pressed = True
+        elif event.key == pg.K_LCTRL:
+            self._special_pressed = True
 
     def build_command(self, keys: pg.key.ScancodeWrapper) -> PlayerCommand:
         rotate_left = keys[pg.K_LEFT] or keys[pg.K_a]
@@ -40,10 +43,12 @@ class InputMapper:
             shield=self._shield_pressed,
             hyperspace=self._hyper_pressed,
             time_stop=self._time_stop_pressed,
+            special=self._special_pressed,
         )
 
         self._shoot_pressed = False
         self._shield_pressed = False
         self._hyper_pressed = False
         self._time_stop_pressed = False
+        self._special_pressed = False
         return cmd

@@ -129,7 +129,10 @@ class World:
         self._apply_commands(dt, commands_by_player_id)
 
         for ship in self.ships.values():
-            ship.update(dt)
+            created = ship.update(dt)
+            if created:
+                self.bullets.add(*created)
+                self.all_sprites.add(*created)                          
         for bullet in self.bullets:
             bullet.update(dt)
         for ast in self.asteroids:
@@ -177,6 +180,13 @@ class World:
                 self.bullets.add(*created_bullets)
                 self.all_sprites.add(*created_bullets)
                 self.events.append("player_shoot")
+
+            if cmd.special:
+                created = ship.try_activate_special(self.bullets)
+                if created:
+                    self.bullets.add(*created)
+                    self.all_sprites.add(*created)
+                    self.events.append("player_shoot")
 
     def _update_ufos(self, dt: float) -> None:
         for ufo in list(self.ufos):
@@ -254,6 +264,20 @@ class World:
 
                 if powerup.kind == "double_shot":
                     ship.activate_double_shot()
+                    self.events.append("powerup_pick")
+
+                elif powerup.kind == "repair":
+                    self.lives[ship.player_id] = min(
+                        C.MAX_LIVES,
+                        self.lives[ship.player_id] + 1
+                    )
+                    self.events.append("powerup_pick")
+
+                elif powerup.kind == "orb":
+                    ship.special_energy = min(
+                        C.SPECIAL_MAX,
+                        ship.special_energy + C.SPECIAL_PER_ORB
+                    )
                     self.events.append("powerup_pick")
 
                 powerup.kill()
