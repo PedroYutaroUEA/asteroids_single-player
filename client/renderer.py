@@ -49,7 +49,7 @@ class Renderer:
         double_shot_time: float = 0.0,
         shield_time: float = 0.0,
         shield_cool: float = 0.0,
-        time_stop_timer: float = 0.0,  
+        time_stop_timer: float = 0.0,
         time_stop_cool: float = 0.0,
     ) -> None:
         if state != SceneState.PLAY:
@@ -82,10 +82,14 @@ class Renderer:
 
         if shield_time > 0.0:
             shield_label = f"SHIELD ACTIVE {shield_time:0.1f}s"
-            shield_ratio = min(1.0, max(0.0, shield_time / self.config.SHIP_SHIELD_DURATION))
+            shield_ratio = min(
+                1.0, max(0.0, shield_time / self.config.SHIP_SHIELD_DURATION)
+            )
         elif shield_cool > 0.0:
             shield_label = f"SHIELD COOLDOWN {shield_cool:0.1f}s"
-            total_cool = self.config.SHIP_SHIELD_DURATION + self.config.SHIP_SHIELD_COOLDOWN
+            total_cool = (
+                self.config.SHIP_SHIELD_DURATION + self.config.SHIP_SHIELD_COOLDOWN
+            )
             shield_ratio = 1.0 - min(1.0, max(0.0, shield_cool / total_cool))
         else:
             shield_label = "SHIELD READY"
@@ -118,7 +122,7 @@ class Renderer:
         ts_y = shield_y + 56
         self.screen.blit(self.font.render(ts_label, True, ts_color), (bar_x, ts_y))
         ts_border = pg.Rect(bar_x, ts_y + 30, bar_w, bar_h)
-        ts_fill   = pg.Rect(bar_x, ts_y + 30, int(bar_w * ts_ratio), bar_h)
+        ts_fill = pg.Rect(bar_x, ts_y + 30, int(bar_w * ts_ratio), bar_h)
         pg.draw.rect(self.screen, ts_color, ts_border, width=1)
         if ts_fill.width > 0:
             pg.draw.rect(self.screen, ts_color, ts_fill)
@@ -132,26 +136,26 @@ class Renderer:
         )
         self._draw_text(
             self.font,
-            "Press any key",
+            "(Press any key to start)",
             self.config.WIDTH // 2 - 170,
             220,
         )
         self._draw_text(
             self.font,
-            "Move: W/UP | Turn: A,D or LEFT,RIGHT",
-            self.config.WIDTH // 2 - 230,
+            "Move: W/UP | Turn: A,D or LEFT,RIGHT | Shoot: SPACE",
+            self.config.WIDTH // 2 - 330,
             290,
         )
         self._draw_text(
             self.font,
-            "Shoot: SPACE | Shield: E | Hyperspace: LSHIFT | Time Stop: Q",
-            self.config.WIDTH // 2 - 230,
+            "Shield: E | Hyperspace: LSHIFT | Time Stop: Q",
+            self.config.WIDTH // 2 - 290,
             325,
         )
         self._draw_text(
             self.font,
             "Double Shot is a pickup (diamond on map)",
-            self.config.WIDTH // 2 - 230,
+            self.config.WIDTH // 2 - 260,
             360,
         )
 
@@ -164,8 +168,8 @@ class Renderer:
         )
         self._draw_text(
             self.font,
-            "Press any key",
-            self.config.WIDTH // 2 - 170,
+            "(Press any key to play again)",
+            self.config.WIDTH // 2 - 200,
             340,
         )
 
