@@ -271,12 +271,12 @@ class Renderer:
         r = powerup.r
         if powerup.kind == "repair":
             # círculo + cruz
-            pg.draw.circle(self.screen, self.config.WHITE, center, r, 1)
-            pg.draw.line(self.screen, self.config.WHITE, (center[0], center[1]-r), (center[0], center[1]+r), 2)
-            pg.draw.line(self.screen, self.config.WHITE, (center[0]-r, center[1]), (center[0]+r, center[1]), 2)
+            pg.draw.circle(self.screen, self.config.GREEN, center, r, 1)
+            pg.draw.line(self.screen, self.config.GREEN, (center[0], center[1]-r), (center[0], center[1]+r), 2)
+            pg.draw.line(self.screen, self.config.GREEN, (center[0]-r, center[1]), (center[0]+r, center[1]), 2)
 
         elif powerup.kind == "orb":
-            pg.draw.circle(self.screen, self.config.WHITE, center, r, 1)
+            pg.draw.circle(self.screen, self.config.PURPLE, center, r, 1)
 
         else:
             points = [

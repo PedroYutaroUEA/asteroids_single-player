@@ -84,6 +84,8 @@ UFO_BIG_MISS_CHANCE = 0.35
 
 WHITE = (240, 240, 240)
 BLACK = (0, 0, 0)
+PURPLE = (128,0,128)
+GREEN = (0,255,0)
 
 # Audio mixer settings
 AUDIO_FREQUENCY = 44100
