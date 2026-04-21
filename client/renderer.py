@@ -3,7 +3,7 @@
 import pygame as pg
 
 from core import config as C
-from core.entities import Asteroid, Bullet, PowerUp, Ship, UFO
+from core.entities import Asteroid, Bullet, PowerUp, Ship, UFO, BlackHole
 from core.scene import SceneState
 
 
@@ -28,6 +28,7 @@ class Renderer:
             PowerUp: self._draw_powerup,
             Ship: self._draw_ship,
             UFO: self._draw_ufo,
+            BlackHole: self._draw_black_hole,
         }
 
     def clear(self) -> None:
@@ -49,7 +50,7 @@ class Renderer:
         double_shot_time: float = 0.0,
         shield_time: float = 0.0,
         shield_cool: float = 0.0,
-        time_stop_timer: float = 0.0,  
+        time_stop_timer: float = 0.0,
         time_stop_cool: float = 0.0,
     ) -> None:
         if state != SceneState.PLAY:
@@ -82,10 +83,14 @@ class Renderer:
 
         if shield_time > 0.0:
             shield_label = f"SHIELD ACTIVE {shield_time:0.1f}s"
-            shield_ratio = min(1.0, max(0.0, shield_time / self.config.SHIP_SHIELD_DURATION))
+            shield_ratio = min(
+                1.0, max(0.0, shield_time / self.config.SHIP_SHIELD_DURATION)
+            )
         elif shield_cool > 0.0:
             shield_label = f"SHIELD COOLDOWN {shield_cool:0.1f}s"
-            total_cool = self.config.SHIP_SHIELD_DURATION + self.config.SHIP_SHIELD_COOLDOWN
+            total_cool = (
+                self.config.SHIP_SHIELD_DURATION + self.config.SHIP_SHIELD_COOLDOWN
+            )
             shield_ratio = 1.0 - min(1.0, max(0.0, shield_cool / total_cool))
         else:
             shield_label = "SHIELD READY"
@@ -118,7 +123,7 @@ class Renderer:
         ts_y = shield_y + 56
         self.screen.blit(self.font.render(ts_label, True, ts_color), (bar_x, ts_y))
         ts_border = pg.Rect(bar_x, ts_y + 30, bar_w, bar_h)
-        ts_fill   = pg.Rect(bar_x, ts_y + 30, int(bar_w * ts_ratio), bar_h)
+        ts_fill = pg.Rect(bar_x, ts_y + 30, int(bar_w * ts_ratio), bar_h)
         pg.draw.rect(self.screen, ts_color, ts_border, width=1)
         if ts_fill.width > 0:
             pg.draw.rect(self.screen, ts_color, ts_fill)
@@ -238,6 +243,14 @@ class Renderer:
         cup = pg.Rect(0, 0, int(width * 0.5), int(height * 0.7))
         cup.center = (int(ufo.pos.x), int(ufo.pos.y - height * 0.3))
         pg.draw.ellipse(self.screen, self.config.WHITE, cup, width=1)
+
+    def _draw_black_hole(self, bh: BlackHole):
+        # BLACK HOLE AURA
+        pg.draw.circle(self.screen, C.PURPLE, bh.pos, bh.visual_r)
+        # BLACK HOLE RING
+        pg.draw.circle(self.screen, C.VIOLET, bh.pos, bh.visual_r - 4, 2)
+        # BLACK HOLE CENTER
+        pg.draw.circle(self.screen, C.BLACK, bh.pos, bh.r)
 
     def _draw_powerup(self, powerup: PowerUp) -> None:
         center = (int(powerup.pos.x), int(powerup.pos.y))

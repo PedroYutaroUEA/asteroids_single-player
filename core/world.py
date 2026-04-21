@@ -9,7 +9,7 @@ import pygame as pg
 from core import config as C
 from core.collisions import CollisionManager
 from core.commands import PlayerCommand
-from core.entities import Asteroid, PowerUp, Ship, UFO
+from core.entities import Asteroid, BlackHole, PowerUp, Ship, UFO
 from core.utils import Vec, rand_edge_pos
 
 PlayerId = int
@@ -36,6 +36,10 @@ class World:
         self.wave = 0
         self.wave_cool = float(C.WAVE_DELAY)
         self.ufo_timer = float(C.UFO_SPAWN_EVERY)
+
+        self.black_hole = None
+        self.bh_timer = uniform(C.BH_TIMER_MIN, C.BH_TIMER_MAX)
+        self.bh_duration = 0
 
         self.events: list[str] = []
         self._collision_mgr = CollisionManager()
@@ -103,6 +107,42 @@ class World:
         self.powerups.add(powerup)
         self.all_sprites.add(powerup)
 
+    def spawn_black_hole(self, ship: Ship):
+        """Handles blackhole spawwning based on player pos"""
+        pos = Vec(uniform(0, C.WIDTH), uniform(0, C.HEIGHT))
+        while (pos - ship.pos).length() < 200:
+            pos = Vec(uniform(0, C.WIDTH), uniform(0, C.HEIGHT))
+
+        bh = BlackHole(pos)
+        self.black_hole = bh
+        self.all_sprites.add(bh)
+        self.bh_duration = uniform(C.BH_DURATION_MIN, C.BH_DURATION_MAX)
+
+    def _update_blackhole(self, dt: float, ship: Ship):
+        """Handles blackhole timers and effects"""
+        # Handle blackhole spawn time
+        if self.black_hole:
+            self.bh_duration -= dt
+            if self.bh_duration <= 0:
+                self.black_hole.kill()
+                self.black_hole = None
+                self.bh_timer = uniform(10, 20)
+        else:
+            self.bh_timer -= dt
+            if self.bh_timer <= 0:
+                self.spawn_black_hole(ship)
+
+        # Blackhole Gravity effect
+        if self.black_hole:
+            dir_vec = self.black_hole.pos - ship.pos
+            dist = dir_vec.length()
+
+            if dist > 0:
+                dir_vec = dir_vec.normalize()
+                # reduces based on distance
+                force = self.black_hole.strength / (dist + 1)
+                ship.vel += dir_vec * force * dt * 50
+
     def update(
         self,
         dt: float,
@@ -112,7 +152,7 @@ class World:
 
         if self.game_over:
             return
-
+        # Handle time stop timer
         if self.time_stop_timer > 0.0:
             self.time_stop_timer -= dt
             if self.time_stop_timer < 0.0:
@@ -121,6 +161,7 @@ class World:
         else:
             enemy_dt = dt
 
+        # Handle time stop cooldown
         if self.time_stop_cool > 0.0:
             self.time_stop_cool -= dt
             if self.time_stop_cool < 0.0:
@@ -130,6 +171,8 @@ class World:
 
         for ship in self.ships.values():
             ship.update(dt)
+            # updates blackhole for each ship
+            self._update_blackhole(dt, ship)
         for bullet in self.bullets:
             bullet.update(dt)
         for ast in self.asteroids:
@@ -223,10 +266,7 @@ class World:
 
     def _handle_collisions(self) -> None:
         result = self._collision_mgr.resolve(
-            self.ships,
-            self.bullets,
-            self.asteroids,
-            self.ufos,
+            self.ships, self.bullets, self.asteroids, self.ufos, self.black_hole
         )
 
         self.events.extend(result.events)
@@ -241,10 +281,11 @@ class World:
         for pos, kind in result.powerups_to_spawn:
             self.spawn_powerup(pos, kind)
 
-        for player_id in result.ship_deaths:
-            ship = self.get_ship(player_id)
-            if ship is not None:
-                self._ship_die(ship)
+        for death in result.ship_deaths:
+            for player_id, is_instakill in death.items():
+                ship = self.get_ship(player_id)
+                if ship is not None:
+                    self._ship_die(ship, is_instakill)
 
     def _collect_powerups(self) -> None:
         for ship in self.ships.values():
@@ -258,7 +299,7 @@ class World:
 
                 powerup.kill()
 
-    def _ship_die(self, ship: Ship) -> None:
+    def _ship_die(self, ship: Ship, is_instakill: bool) -> None:
         pid = ship.player_id
         self.lives[pid] = self.lives[pid] - 1
         ship.pos.xy = (C.WIDTH / 2, C.HEIGHT / 2)
@@ -267,5 +308,5 @@ class World:
         ship.invuln = float(C.SAFE_SPAWN_TIME)
 
         self.events.append("ship_explosion")
-        if all(v <= 0 for v in self.lives.values()):
+        if all(v <= 0 for v in self.lives.values()) or is_instakill:
             self.game_over = True

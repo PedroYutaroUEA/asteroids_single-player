@@ -80,6 +80,21 @@ class Asteroid(pg.sprite.Sprite):
         self.rect.center = (int(self.pos.x), int(self.pos.y))
 
 
+class BlackHole(pg.sprite.Sprite):
+    """Small dark Blackhole that pulls the player"""
+
+    def __init__(self, pos: Vec):
+        super().__init__()
+        self.pos = Vec(pos)
+        self.r = C.BH_RADIUS
+        self.visual_r = C.BH_VISUAL_RADIUS
+        self.strength = C.BH_STRENGTH
+        self.rect = pg.Rect(0, 0, self.visual_r * 2, self.visual_r * 2)
+
+    def update(self, dt: float):
+        self.rect.center = self.pos
+
+
 class PowerUp(pg.sprite.Sprite):
     """Collectable power-up on the map."""
 

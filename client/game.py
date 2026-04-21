@@ -97,6 +97,7 @@ class Game:
 
         self.audio.update_thrust(cmd.thrust)
         self.audio.update_ufo_siren(list(self.world.ufos))
+        self.audio.update_blackhole_audio(self.world.black_hole)
         self.audio.play_events(self.world.events)
 
     def _draw(self) -> None:
@@ -128,7 +129,7 @@ class Game:
             double_shot_time,
             shield_time,
             shield_cool,
-            time_stop_timer, 
+            time_stop_timer,
             time_stop_cool,
         )
         pg.display.flip()
