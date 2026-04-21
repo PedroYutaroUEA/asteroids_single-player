@@ -168,8 +168,8 @@ class Renderer:
         )
         self._draw_text(
             self.font,
-            "Press any key",
-            self.config.WIDTH // 2 - 170,
+            "(Press any key to play again)",
+            self.config.WIDTH // 2 - 200,
             340,
         )
 
