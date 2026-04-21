@@ -27,6 +27,8 @@ class AudioManager:
                 self._sfx_ch.play(self.sounds.ship_explosion)
             elif ev == "powerup_pick":
                 self._sfx_ch.play(self.sounds.player_shoot)
+            elif ev == "time_stop":              
+                self._sfx_ch.play(self.sounds.time_stop)
 
     def update_thrust(self, active: bool) -> None:
         if active:
