@@ -38,8 +38,8 @@ class World:
         self.ufo_timer = float(C.UFO_SPAWN_EVERY)
 
         self.black_hole = None
-        # self.bh_timer = uniform(C.BH_TIMER_MIN, C.BH_TIMER_MAX)
-        self.bh_timer = 5
+        # blackhole spawn period
+        self.bh_timer = uniform(C.BH_TIMER_MIN, C.BH_TIMER_MAX)
         self.bh_duration = 0
 
         self.events: list[str] = []
